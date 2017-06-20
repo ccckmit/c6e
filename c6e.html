@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="lib/c3.css" rel="stylesheet"/>
+	<link href="lib/vis.css" rel="stylesheet"/>
+  <style>
+  .chart { width:30vw; height:30vw; border: 2px solid #aaaaaa; border-radius: 5px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div id="chart1" class="chart">1</div>
+  <div id="chart2" class="chart">2</div>
+  <div id="chart3" class="chart">3</div>
+  <div id="chart4" class="chart">4</div>
+  <div id="chart5" class="chart">5</div>
+  <div id="chart6" class="chart">6</div>
+  <div id="chart7" class="chart">7</div>
+  <div id="chart8" class="chart">8</div>
+  <div id="chart9" class="chart">9</div>
+  <script>if (typeof module === 'object') { window.module = module; module = undefined; } </script>
+  <script src="lib/d3.js"></script>
+  <script src="lib/c3.js"></script>
+  <script src="lib/vis.js"></script>
+  <script>if (window.module) module = window.module;</script>
+  <script>
+    var remote = require('electron').remote
+    var scriptFile = remote.process.argv[3]
+    require(remote.process.cwd() + '/' + scriptFile)
+  </script>
+</body>
+</html>
