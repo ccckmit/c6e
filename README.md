@@ -12,17 +12,6 @@ $ npm install -g c6e
 
 ## Demo
 
-```
-$ git clone https://github.com/ccckmit/c6demo.git
-$ cd c6demo
-$ npm install
-```
+A demo project for c6 and c6e : 
 
-
-Example 1 : 
-
-```
-$ c6e chartDemo.js
-```
-
-![](img/chartDemo.png)
+* <https://github.com/ccckmit/c6demo>
