@@ -16,7 +16,10 @@ $ npm install -g c6e
 $ c6e <file>
 ```
 
-Comment: if your code do not call c6 chart library, just use the `node <file>` to run it
+Comment: 
+
+1. c6e run file in [electron.js render process](https://github.com/electron/electron/blob/master/docs/tutorial/quick-start.md#renderer-process) .
+2. If your code do not call chart library, just use the `node <file>` to run it
 
 ## Demo
 
