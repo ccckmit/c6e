@@ -4,8 +4,7 @@
   "main": "app.js",
   "devDependencies": {},
   "dependencies": {
-    "c6": "^0.1.0",
-    "j6": "^1.0.2"
+    "c6": "^0.1.0"
   },
   "bin": {
     "c6e": "c6e.js"

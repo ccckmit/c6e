@@ -18,7 +18,7 @@ $ c6e <file>
 
 Comment: 
 
-1. c6e run file in [electron.js render process](https://github.com/electron/electron/blob/master/docs/tutorial/quick-start.md#renderer-process) .
+1. c6e run file in [electron.js renderer process](https://github.com/electron/electron/blob/master/docs/tutorial/quick-start.md#renderer-process) mode .
 2. If your code do not call chart library, just use the `node <file>` to run it
 
 ## Demo
