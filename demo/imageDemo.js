@@ -1,4 +1,4 @@
-var c6 = require('c6')
+// var c6 = require('c6')
 
 c6.loadImage(__dirname + '/demo_small.jpg', function (image) {
   console.log('load Image complete!')
