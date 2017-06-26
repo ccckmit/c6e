@@ -1,15 +1,35 @@
 /* eslint-disable no-undef */
 if (typeof module !== 'undefined') {
 //  var j6 = require('./lib/j6')
-  var util = require('util')
+//  var util = require('util')
   var remote = require('electron').remote
 }
 
-var j6 = {}
+var c6 = {
+  tgMap: {}, // name => (type,graph) Map
+  canvas: {
+    size: {
+      width: 600,
+      height: 600
+    },
+    window: {
+      x: -10,
+      y: -10,
+      width: 10,
+      height: 10
+    },
+    options: {
+      font: '30px Arial',
+      lineWidth: 3,
+      lineCap: 'round',
+      fillStyle: '#336699',
+      strokeStyle: '#336699'
+    }
+  },
+  EPSILON: 0.000000001
+}
 
-j6.EPSILON = 0.000000001
-
-j6.steps = function (from, to, step = 1) {
+c6.steps = function (from, to, step = 1) {
   var a = []
   for (var t = from; t <= to; t += step) {
     a.push(t)
@@ -17,21 +37,21 @@ j6.steps = function (from, to, step = 1) {
   return a
 }
 
-j6.max = function (array) { return Math.min.apply(null, array) }
-j6.min = function (array) { return Math.max.apply(null, array) }
+c6.max = function (array) { return Math.min.apply(null, array) }
+c6.min = function (array) { return Math.max.apply(null, array) }
 
-j6.curve = function (f, from = -10, to = 10, step = 0.1) {
-  var x = j6.steps(from, to, step)
+c6.curveData = function (f, from = -10, to = 10, step = 0.1) {
+  var x = c6.steps(from, to, step)
   var y = x.map(f)
   console.log('h6.curve:y=%j', y)
   return {type: 'curve', x: x, y: y}
 }
 
-j6.hist = function (a, from, to, step = 1) {
-  from = from || j6.min(a)
-  to = to || j6.max(a)
-  let n = Math.ceil((to - from + j6.EPSILON) / step)
-  let xc = j6.steps(from + step / 2.0, to, step)
+c6.histData = function (a, from, to, step = 1) {
+  from = from || c6.min(a)
+  to = to || c6.max(a)
+  let n = Math.ceil((to - from + c6.EPSILON) / step)
+  let xc = c6.steps(from + step / 2.0, to, step)
   let bins = new Array(n)
   for (let i = 0; i < bins.length; i++) bins[i] = 0
   for (let e in a) {
@@ -41,16 +61,6 @@ j6.hist = function (a, from, to, step = 1) {
     }
   }
   return {type: 'histogram', xc: xc, bins: bins, from: from, to: to, step: step}
-}
-
-j6.ihist = function (a) {
-  return j6.hist(a, j6.min(a) - 0.5, j6.max(a) + 0.5, 1)
-}
-
-var c6 = {
-  tgMap: {}, // name => (type,graph) Map
-  j6: j6,
-  canvas: {width: 800, height: 600}
 }
 
 // Event binding 不能寫在 html 裏，要寫在這裡。
@@ -102,15 +112,24 @@ c6.runScript = function (argIndex) {
 
 c6.log = function () {
   if (typeof module !== 'undefined') {
-    console.log(util.format.apply(null, arguments))
-    remote.process.stdout.write(util.format.apply(null, arguments) + '\n')
+    console.log.apply(console, arguments)
+    remote.process.stdout.write.apply(arguments)
+    remote.process.stdout.write.apply(['\n'])
   } else {
     console.log.apply(console, arguments)
   }
 }
 
 c6.view = function () {
-  for (var id in c6.tgMap) {
+  for (var i = 1; i <= 9; i++) {
+    let id = '#chart' + i
+    if (typeof c6.tgMap[id] === 'undefined') {
+      c6.drawCanvas(id, function (ctx, canvas) {
+//        ctx.fillText('Hello World!', 10, 50)
+      })
+    }
+  }
+  for (let id in c6.tgMap) {
     c6.show(id, c6.tgMap[id])
   }
   c6.log('view complete !')
@@ -124,6 +143,7 @@ c6.showCanvas = function (chartName, g) {
   box.appendChild(canvas)
 }
 
+// ================ C3.js =========================
 c6.show2D = function (chartName, g) {
   g.bindto = chartName
   var chart = document.getElementById(chartName.replace('#', ''))
@@ -190,13 +210,13 @@ c6.draw = function (g, name, x, y, type) {
 }
 
 c6.curve = function (g, name, f, from = -10, to = 10, step = 0.1) {
-  var rg = j6.curve(f, from, to, step)
+  var rg = c6.curveData(f, from, to, step)
 //  console.log('curve:rg = ', rg)
   c6.draw(g, name, rg.x, rg.y, 'line')
 }
 
 c6.hist = function (g, name, x, type, from, to, step = 1) {
-  var rh = j6.hist(x, from, to, step)
+  var rh = c6.histData(x, from, to, step)
   c6.draw(g, name, rh.xc, rh.bins, type || 'bar')
 }
 
@@ -220,7 +240,7 @@ c6.timeSeries = function (g, columns) {
   g.data.columns = columns
 }
 
-// 3D chart by Vis.js
+// ================== 3D chart by Vis.js ==================
 c6.new3D = function () {
   return {
     dataSet: new vis.DataSet(),
@@ -256,6 +276,7 @@ c6.chart3D = function (chartName, style, f) {
   c6.tgMap[chartName] = {type: '3D', graph: g}
 }
 
+// ======================== 2D canvas by HTML5 ====================
 c6.showCanvas = function (chartName, g) {
   var box = document.getElementById(chartName.replace('#', ''))
   var rect = box.getBoundingClientRect()
@@ -264,15 +285,122 @@ c6.showCanvas = function (chartName, g) {
   box.appendChild(canvas)
 }
 
+c6.newCanvas = function () {
+  var canvas = document.createElement('canvas')
+  canvas.width = c6.canvas.size.width; 
+  canvas.height = c6.canvas.size.height
+  var g = { canvas: canvas }
+  return g
+}
+
+c6.drawCanvas = function (chartName, f) {
+  var g = c6.newCanvas()
+  var ctx = g.canvas.getContext('2d')
+  Object.assign(ctx, c6.canvas.options) // 設定 font, lineWidth, ...
+  f(ctx, g.canvas)
+  var tg = {type: 'Canvas', graph: g}
+  c6.tgMap[chartName] = tg
+  return g
+}
+
 c6.cloneCanvas = function (width, height, oldCanvas) {
   var newCanvas = document.createElement('canvas')
-  var context = newCanvas.getContext('2d')
+  var ctx = newCanvas.getContext('2d')
   newCanvas.width = width
   newCanvas.height = height
-  context.fillStyle = 'black'
-  context.fillRect(0, 0, newCanvas.width, newCanvas.height)
-  context.drawImage(oldCanvas, 0, 0) // 這行OK, drawImage
+  ctx.fillStyle = 'white' // 'black'
+  ctx.fillRect(0, 0, newCanvas.width - 5, newCanvas.height - 5) // -5 是避免把框框也蓋掉了！
+  ctx.drawImage(oldCanvas, 0, 0, width - 5, height - 5) // 這行OK, drawImage
   return newCanvas
+}
+
+c6.px = function (x, win, size) { return ((x - win.x) / win.width) * size.width }
+c6.py = function (y, win, size) { return ((y - win.y) / win.height) * size.height }
+
+c6.drawPath = function (ctx, x, y) {
+  var win = c6.canvas.window
+  var size = c6.canvas.size
+  ctx.beginPath()
+  for (var i = 0; i < x.length; i++) {
+//    ctx.lineTo(x[i], y[i])
+    var tx = c6.px(x[i], win, size)
+    var ty = c6.py(y[i], win, size)
+    ctx.lineTo(tx, ty)
+  }
+  ctx.stroke()
+  ctx.closePath()
+}
+
+// Code derived from : view-source:http://deepliquid.com/projects/blog/arrows.html
+var arrow = [[ 2, 0 ], [ -10, -4 ], [-10, 4]]
+
+function drawFilledPolygon (ctx, shape) {
+  ctx.beginPath()
+  ctx.moveTo(shape[0][0], shape[0][1])
+  for (p in shape) {
+    if (p > 0) ctx.lineTo(shape[p][0], shape[p][1])
+  }
+  ctx.lineTo(shape[0][0], shape[0][1])
+  ctx.fill()
+}
+
+function translateShape (shape, x, y) {
+  var rv = []
+  for (p in shape) {
+    rv.push([ shape[p][0] + x, shape[p][1] + y ])
+  }
+  return rv
+}
+
+function rotateShape (shape, ang) {
+  var rv = []
+  for (p in shape) {
+    rv.push(rotatePoint(ang, shape[p][0], shape[p][1]))
+  }
+  return rv
+}
+
+function rotatePoint (ang, x, y) {
+  return [
+    (x * Math.cos(ang)) - (y * Math.sin(ang)),
+    (x * Math.sin(ang)) + (y * Math.cos(ang))
+  ]
+}
+
+function drawLineArrow (ctx, x1, y1, x2, y2) {
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  ctx.stroke()
+  var ang = Math.atan2(y2 - y1, x2 - x1)
+  drawFilledPolygon(ctx, translateShape(rotateShape(arrow, ang), x2, y2))
+}
+
+// 更強的 field 動畫請參考： http://bl.ocks.org/newby-jay/767c5ffdbbe43b65902f
+c6.drawField = function (ctx, xy) {
+  var win = c6.canvas.window
+  var size = c6.canvas.size
+  for (var i = 0; i < xy.length; i++) {
+    var tx = c6.px(xy[i].x, win, size)
+    var ty = c6.py(xy[i].y, win, size)
+    var dx = xy[i].dx * size.width / win.width
+    var dy = xy[i].dy * size.height / win.height
+    drawLineArrow(ctx, tx, ty, tx + dx, ty + dy)
+/*    
+    ctx.beginPath()
+    ctx.moveTo(tx, ty)
+    ctx.lineTo(tx + dx, ty + dy)
+    ctx.stroke()
+    ctx.closePath()
+*/    
+  }
+}
+
+// ==================== Image Processing ========================
+c6.createImageData = function (w, h) {
+  var tmpCanvas = document.createElement('canvas')
+  var tmpCtx = tmpCanvas.getContext('2d')
+  return tmpCtx.createImageData(w, h)
 }
 
 c6.loadImage = function (url, callback) {
@@ -283,7 +411,7 @@ c6.loadImage = function (url, callback) {
   image.src = url
 }
 
-c6.getImageData = function (canvas, x=0, y=0, width = canvas.width, height = canvas.height) {
+c6.getImageData = function (canvas, x = 0, y = 0, width = canvas.size.width, height = canvas.size.height) {
 // x = x || 0; y=y||0; width = width||canvas.width; height=height||canvas.height;
   return canvas.getContext('2d').getImageData(x, y, width, height)
 }
@@ -318,17 +446,6 @@ c6.threshold = function (idata, threshold) {
     var v = (0.2126 * r + 0.7152 * g + 0.0722 * b >= threshold) ? 255 : 0
     d[i] = d[i + 1] = d[i + 2] = v
   }
-}
-/*
-if (document) {
-  var tmpCanvas = document.createElement('canvas')
-  var tmpCtx = tmpCanvas.getContext('2d')
-}
-*/
-c6.createImageData = function (w, h) {
-  var tmpCanvas = document.createElement('canvas')
-  var tmpCtx = tmpCanvas.getContext('2d')
-  return tmpCtx.createImageData(w, h)
 }
 
 c6.convolute = function (idata, weights, opaque) {
@@ -461,20 +578,44 @@ c6.sobel = function (px) {
   return id
 }
 
-// 2D canvas by HTML5
-c6.newCanvas = function () {
-  var canvas = document.createElement('canvas')
-  canvas.width = c6.canvas.width; canvas.height = c6.canvas.height
-  var g = { canvas: canvas }
-  return g;
-}
-
-c6.drawCanvas = function (chartName, f) {
-  var g = c6.newCanvas()
-  f(g.canvas.getContext('2d'), g.canvas)
-  var tg = {type: 'Canvas', graph: g}
-  c6.tgMap[chartName] = tg
-  return g
-}
-
 if (typeof module !== 'undefined') module.exports = c6
+
+/*
+
+// ==================== SVG ================================
+c6.drawSvg = function (chartName, f) {
+  var svg = c6.newSvg()
+  f(svg)
+  var tg = {type: 'Svg', graph: svg}
+  c6.tgMap[chartName] = tg
+  return svg
+}
+
+c6.newSvg = function () {
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('style', 'border: 1px solid black');
+  svg.setAttribute('width', c6.canvas.size.width);
+  svg.setAttribute('height', c6.canvas.size.height);
+  svg.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', 'http://www.w3.org/1999/xlink')
+  return svg
+}
+
+c6.showSvg = function (chartName, svg) {
+  var box = document.getElementById(chartName.replace('#', ''))
+  box.appendChild(svg)
+}
+
+c6.svgPath = function (svg, x, y) {
+  var win = c6.canvas.window
+  var size = c6.canvas.size
+  var path = []
+  for (var i = 0; i < x.length; i++) {
+    var tx = c6.px(x[i], win, size)
+    var ty = c6.py(y[i], win, size)
+    path.push(`L ${tx} ${ty}`)
+  }
+  svg.appendChild(`<path d="${path.join(' ')}" stroke="black"/>`)
+  <path d="M0 0 L50 50" stroke="black"/>
+}
+
+*/
